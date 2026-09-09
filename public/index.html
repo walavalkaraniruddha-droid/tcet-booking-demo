@@ -13,19 +13,15 @@
         .screen { width: 100%; max-width: 400px; height: 60px; margin: 0 auto; background: linear-gradient(to bottom, #38bdf844, transparent); border-top: 4px solid #38bdf8; border-top-left-radius: 50%; border-top-right-radius: 50%; box-shadow: 0 -15px 40px rgba(56, 189, 248, 0.4); transform: rotateX(-10deg); }
         .screen-text { color: #64748b; font-size: 0.8rem; margin-top: 10px; letter-spacing: 3px; }
 
-        /* Seat Layout */
-        .seating-area { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-bottom: 40px; }
-        .seat-row { display: flex; gap: 12px; }
-        .seat { width: 35px; height: 35px; border-radius: 8px; border: none; font-size: 0.6rem; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        /* Dynamic Database Grid */
+        .seating-area { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; justify-content: center; max-width: 250px; margin: 0 auto 40px auto; }
+        .seat { width: 45px; height: 45px; border-radius: 8px; border: none; font-size: 0.9rem; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         
-        /* Seat Status Colors */
+        /* Dynamic Status Colors */
+        .seat.available { background: #e2e8f0; color: #0b0f19; cursor: pointer; }
+        .seat.available:hover { background: #cbd5e1; transform: scale(1.1); }
         .seat.booked { background: #475569; color: #94a3b8; cursor: not-allowed; opacity: 0.6; }
-        .seat.dummy-available { background: #e2e8f0; color: #0b0f19; cursor: pointer; }
-        .seat.dummy-available:hover { background: #cbd5e1; transform: scale(1.1); }
-        
-        /* The Race Target Seat */
-        .seat.target-seat { background: #fbbf24; color: #000; cursor: pointer; box-shadow: 0 0 15px rgba(251, 191, 36, 0.6); animation: pulse 2s infinite; }
-        .seat.target-seat:hover { transform: scale(1.1); background: #f59e0b; }
+        .seat.pending { background: #fbbf24; color: #000; cursor: not-allowed; opacity: 0.8; animation: pulse 1.5s infinite; }
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); }
@@ -38,15 +34,13 @@
         .modal-content { background: rgba(30, 41, 59, 0.9); padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
         .modal-content h3 { margin-top: 0; color: #f8fafc; }
         
-        input { width: 85%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; transition: border 0.3s; }
-        input:focus { border: 1px solid #38bdf8; }
+        input { width: 85%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; }
         
-        .btn { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; padding: 14px 24px; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; margin-top: 20px; transition: opacity 0.3s; text-transform: uppercase; letter-spacing: 1px; }
-        .btn:hover { opacity: 0.9; }
+        .btn { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; padding: 14px 24px; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; margin-top: 20px; text-transform: uppercase; }
         .btn:disabled { background: #475569; cursor: not-allowed; }
         
-        .qr-img { width: 180px; border-radius: 16px; margin: 15px 0; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 2px solid #334155; }
-        #timer { color: #ef4444; font-weight: 900; font-size: 1.4rem; letter-spacing: 1px; display: block; margin-bottom: 15px; }
+        .qr-img { width: 180px; border-radius: 16px; margin: 15px 0; border: 2px solid #334155; }
+        #timer { color: #ef4444; font-weight: 900; font-size: 1.4rem; display: block; margin-bottom: 15px; }
         
         /* Legend */
         .legend { display: flex; justify-content: center; gap: 20px; margin-top: 20px; font-size: 0.8rem; color: #94a3b8; }
@@ -63,40 +57,24 @@
         <div class="screen-text">SCREEN THIS WAY</div>
     </div>
     
-    <div class="seating-area">
-        <div class="seat-row">
-            <button class="seat booked">X</button><button class="seat booked">X</button><button class="seat dummy-available"></button><button class="seat dummy-available"></button><button class="seat booked">X</button>
-        </div>
-        <div class="seat-row">
-            <button class="seat dummy-available"></button><button class="seat dummy-available"></button><button class="seat booked">X</button><button class="seat dummy-available"></button><button class="seat booked">X</button>
-        </div>
-        <div class="seat-row">
-            <button class="seat booked">X</button>
-            <button class="seat dummy-available"></button>
-            <!-- THE TARGET SEAT -->
-            <button class="seat target-seat" id="vipSeat" onclick="openDetailsModal()">VIP</button>
-            <button class="seat dummy-available"></button>
-            <button class="seat booked">X</button>
-        </div>
-        <div class="seat-row">
-            <button class="seat booked">X</button><button class="seat booked">X</button><button class="seat dummy-available"></button><button class="seat booked">X</button><button class="seat dummy-available"></button>
-        </div>
+    <!-- Empty Container to be filled by Database -->
+    <div class="seating-area" id="seat-map">
+        <p style="grid-column: span 4; color: #94a3b8;">Loading live database...</p>
     </div>
 
     <div class="legend">
         <div class="legend-item"><div class="legend-box" style="background: #e2e8f0;"></div> Available</div>
+        <div class="legend-item"><div class="legend-box" style="background: #fbbf24;"></div> Processing</div>
         <div class="legend-item"><div class="legend-box" style="background: #475569;"></div> Booked</div>
-        <div class="legend-item"><div class="legend-box" style="background: #fbbf24;"></div> Premium</div>
     </div>
 
     <!-- Details Modal -->
     <div class="modal" id="detailsModal">
         <div class="modal-content">
-            <h3>Complete Booking</h3>
+            <h3>Booking Seat <span id="displaySeatNumber"></span></h3>
             <span id="timer">05:00</span>
             <input type="text" id="userName" placeholder="Full Name (e.g. Aniruddha)" required autocomplete="off">
             <input type="tel" id="userPhone" placeholder="Mobile Number" required autocomplete="off">
-            <!-- IMPORTANT: Passes 'event' to the function to disable the button while loading -->
             <button class="btn" onclick="openPaymentModal(event)">Proceed to Payment</button>
         </div>
     </div>
@@ -105,12 +83,9 @@
     <div class="modal" id="paymentModal">
         <div class="modal-content">
             <h3>Scan or Tap to Pay ₹5</h3>
-            
-            <!-- THE REAL DEEP LINK -->
             <a href="upi://pay?pa=walavalkaraniruddha@okaxis&pn=Aniruddha&am=5.00&cu=INR" target="_blank">
                 <img src="WhatsApp Image 2026-09-09 at 5.33.54 PM.jpeg" alt="QR Code" class="qr-img">
             </a>
-            
             <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0;">Tap image to open GPay. After paying, click Verify.</p>
             <button class="btn" id="verifyBtn" onclick="processBackendPayment()">Verify & Complete</button>
             <p id="message" style="margin-top: 15px; font-weight: bold; font-size: 1.1rem;"></p>
@@ -118,8 +93,42 @@
     </div>
 
     <script>
+        let currentSeatId = null;
         let timeLeft = 300; 
         let timerInterval;
+
+        // Fetches data directly from your Aiven MySQL database on load
+        async function loadSeats() {
+            try {
+                const res = await fetch('/api/seats');
+                const seats = await res.json();
+                
+                const map = document.getElementById('seat-map');
+                map.innerHTML = ''; 
+
+                seats.forEach(seat => {
+                    const btn = document.createElement('button');
+                    btn.className = `seat ${seat.status.toLowerCase()}`; // Assigns available, booked, or pending CSS
+                    
+                    if(seat.status === 'AVAILABLE') {
+                        btn.innerText = seat.id;
+                        btn.onclick = () => openDetailsModal(seat.id);
+                    } else if (seat.status === 'PENDING') {
+                        btn.innerText = "⏳";
+                        btn.disabled = true;
+                    } else {
+                        btn.innerText = "X";
+                        btn.disabled = true;
+                    }
+                    map.appendChild(btn);
+                });
+            } catch (error) {
+                document.getElementById('seat-map').innerHTML = "<p>Database Connection Error</p>";
+            }
+        }
+
+        // Run when the page opens
+        window.onload = loadSeats;
 
         function startTimer() {
             timerInterval = setInterval(async () => {
@@ -130,15 +139,20 @@
                 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    // Tell server to un-lock the seat since time ran out
-                    await fetch('/release-seat', { method: 'POST' });
+                    await fetch('/release-seat', { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ seatId: currentSeatId }) 
+                    });
                     alert("Time expired! Your seat has been released.");
                     location.reload();
                 }
             }, 1000);
         }
 
-        function openDetailsModal() {
+        function openDetailsModal(seatId) {
+            currentSeatId = seatId;
+            document.getElementById('displaySeatNumber').innerText = seatId;
             document.getElementById('detailsModal').style.display = 'flex';
             if(!timerInterval) startTimer();
         }
@@ -148,20 +162,25 @@
             if(!name) return alert('Please enter your name');
 
             const btn = event.target;
-            btn.innerText = "Checking Seat Availability...";
+            btn.innerText = "Locking Seat in Database...";
             btn.disabled = true;
 
-            // Ask server to hold the seat BEFORE showing QR
             try {
-                const res = await fetch('/hold-seat', { method: 'POST' });
+                const res = await fetch('/hold-seat', { 
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ seatId: currentSeatId })
+                });
                 const data = await res.json();
 
                 if (data.success) {
                     document.getElementById('detailsModal').style.display = 'none';
                     document.getElementById('paymentModal').style.display = 'flex';
+                    // Optional: Call loadSeats() here to instantly turn the seat Yellow in the background!
+                    loadSeats();
                 } else {
-                    alert("Too late! " + data.message);
-                    location.reload(); // Kick them back to the main screen
+                    alert(data.message);
+                    location.reload(); 
                 }
             } catch (err) {
                 alert("Server error");
@@ -180,16 +199,17 @@
                 const res = await fetch('/book-seat', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ name: document.getElementById('userName').value })
+                    body: JSON.stringify({ seatId: currentSeatId, name: document.getElementById('userName').value })
                 });
                 const data = await res.json();
 
                 if(data.success) {
-                    msg.style.color = "#22c55e"; // Green
+                    msg.style.color = "#22c55e"; 
                     msg.innerText = "✅ " + data.message;
-                    setTimeout(() => location.reload(), 4000);
+                    // Reloads the page so the database grid updates to show 'X' (Booked)
+                    setTimeout(() => location.reload(), 3000);
                 } else {
-                    msg.style.color = "#ef4444"; // Red
+                    msg.style.color = "#ef4444"; 
                     msg.innerText = "❌ " + data.message;
                     btn.innerText = "Booking Closed";
                 }
