@@ -39,9 +39,8 @@
         .btn.active { background: #e50914; color: white; cursor: pointer; }
         .btn.active:hover { background: #b9090b; }
 
-        .monitor-card { background: #000; border: 1px solid #333; border-radius: 8px; padding: 15px; }
-        .monitor-title { font-size: 0.7rem; font-weight: bold; color: #e50914; letter-spacing: 1px; margin-bottom: 5px; }
-        .monitor-logs { font-family: monospace; font-size: 0.7rem; color: #4ade80; height: 80px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #222; }
+        /* Hidden Terminal as requested */
+        .monitor-card { display: none; }
 
         /* Simulated Payment Modal CSS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
@@ -95,20 +94,18 @@
         <button class="btn" id="proceedBtn" onclick="initiatePaymentFlow()">Proceed to Payment</button>
     </div>
 
-    <div class="monitor-card">
-        <div class="monitor-title">DATABASE TERMINAL</div>
-        <div style="font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; color: #fff;">Transaction Monitor</div>
-        <div class="monitor-logs" id="db-logs">
-            [SYS] Connected to Aiven Cloud Database...<br>
-        </div>
-    </div>
+    <!-- Hidden from UI, but exists in code -->
+    <div class="monitor-card"></div>
 </div>
 
 <!-- Simulated Payment Modal -->
 <div class="modal" id="paymentModal">
     <div class="modal-content">
-        <!-- View 1: Processing Spinner -->
+        <!-- View 1: Processing Spinner & Timer -->
         <div id="processingView">
+            <!-- The 5 Minute Timer -->
+            <div id="paymentTimer" style="color: #e50914; font-weight: 900; font-size: 1.8rem; letter-spacing: 2px; margin-bottom: 20px;">05:00</div>
+            
             <div class="spinner"></div>
             <h3 style="margin: 0 0 10px 0; color: white;">Processing Payment...</h3>
             <p style="color: #888; font-size: 0.85rem; margin: 0;">Securing your seat in the database.</p>
@@ -142,12 +139,8 @@
 
 <script>
     let currentSelectedId = null;
-
-    function logEvent(msg) {
-        const logs = document.getElementById('db-logs');
-        logs.innerHTML += `> ${msg}<br>`;
-        logs.scrollTop = logs.scrollHeight;
-    }
+    let timeLeft = 300; 
+    let timerInterval;
 
     async function loadSeats() {
         try {
@@ -180,9 +173,8 @@
                 }
                 map.appendChild(btn);
             });
-            logEvent("[SYNC] Retrieved 80 seats from Aiven MySQL");
         } catch (error) {
-            logEvent("[ERROR] Database connection failed");
+            console.error("Database connection failed");
         }
     }
 
@@ -205,8 +197,29 @@
         const proceedBtn = document.getElementById('proceedBtn');
         proceedBtn.classList.add('active');
         proceedBtn.disabled = false;
+    }
+
+    function startTimer() {
+        timeLeft = 300; // 5 minutes
+        clearInterval(timerInterval);
         
-        logEvent(`[CLIENT] Selected Seat ${rowChar}${colNum} (DB_ID: ${id})`);
+        timerInterval = setInterval(async () => {
+            timeLeft--;
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('paymentTimer').innerText = `${m}:${s}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                await fetch('/release-seat', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ seatId: currentSelectedId }) 
+                });
+                alert("Session Expired! The seat has been released.");
+                location.reload();
+            }
+        }, 1000);
     }
 
     async function initiatePaymentFlow() {
@@ -215,8 +228,6 @@
         const proceedBtn = document.getElementById('proceedBtn');
         proceedBtn.innerText = "Locking Seat...";
         proceedBtn.classList.remove('active');
-        
-        logEvent(`[REQ] Locking Seat ID: ${currentSelectedId} with Pessimistic Lock`);
         
         try {
             const res = await fetch('/hold-seat', { 
@@ -227,29 +238,27 @@
             const data = await res.json();
 
             if (data.success) {
-                logEvent(`[LOCK] Success. Status = PENDING`);
-                
                 document.getElementById('paymentModal').style.display = 'flex';
                 document.getElementById('processingView').style.display = 'block';
                 document.getElementById('successView').style.display = 'none';
 
+                startTimer();
+
+                // 5-second simulated payment so everyone can see the timer ticking down
                 setTimeout(() => {
                     finalizeSimulatedPayment();
-                }, 3000);
+                }, 5000);
 
             } else {
-                logEvent(`[REJECT] Transaction Denied.`);
                 alert("Race Condition Prevented! " + data.message);
                 location.reload(); 
             }
         } catch (err) {
-            logEvent("[ERROR] Network failure");
+            console.error("Network failure");
         }
     }
 
     async function finalizeSimulatedPayment() {
-        logEvent(`[VERIFY] Payment complete. Committing to DB...`);
-
         try {
             const res = await fetch('/book-seat', {
                 method: 'POST',
@@ -259,7 +268,7 @@
             const data = await res.json();
 
             if(data.success) {
-                logEvent(`[COMMIT] DB Updated. Seat ID: ${currentSelectedId} is BOOKED.`);
+                clearInterval(timerInterval); // Stop the timer once paid
                 
                 const rowChar = String.fromCharCode(65 + Math.floor((currentSelectedId-1)/10));
                 const colNum = ((currentSelectedId - 1) % 10) + 1;
@@ -268,7 +277,6 @@
                 document.getElementById('processingView').style.display = 'none';
                 document.getElementById('successView').style.display = 'block';
             } else {
-                logEvent(`[ROLLBACK] Transaction failed`);
                 alert("Error: " + data.message);
                 location.reload();
             }
