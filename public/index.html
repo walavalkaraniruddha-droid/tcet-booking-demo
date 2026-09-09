@@ -3,231 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NextGen Cinemas</title>
+    <title>Movie Tickets</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0b0f19; color: white; text-align: center; margin: 0; padding: 20px; overflow-x: hidden; }
-        h2 { text-transform: uppercase; letter-spacing: 2px; color: #e2e8f0; font-size: 1.5rem; margin-bottom: 30px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 0; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 420px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.05); padding: 20px; box-sizing: border-box; }
         
-        /* Glowing Screen */
-        .screen-container { perspective: 400px; margin-bottom: 40px; }
-        .screen { width: 100%; max-width: 400px; height: 60px; margin: 0 auto; background: linear-gradient(to bottom, #38bdf844, transparent); border-top: 4px solid #38bdf8; border-top-left-radius: 50%; border-top-right-radius: 50%; box-shadow: 0 -15px 40px rgba(56, 189, 248, 0.4); transform: rotateX(-10deg); }
-        .screen-text { color: #64748b; font-size: 0.8rem; margin-top: 10px; letter-spacing: 3px; }
+        .header { margin-bottom: 25px; }
+        .subtitle { color: #64748b; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .title { font-size: 1.5rem; font-weight: 800; margin: 5px 0; }
+        .time-info { color: #94a3b8; font-size: 0.85rem; }
 
-        /* Dynamic Database Grid */
-        .seating-area { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; justify-content: center; max-width: 250px; margin: 0 auto 40px auto; }
-        .seat { width: 45px; height: 45px; border-radius: 8px; border: none; font-size: 0.9rem; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        
-        /* Dynamic Status Colors */
-        .seat.available { background: #e2e8f0; color: #0b0f19; cursor: pointer; }
-        .seat.available:hover { background: #cbd5e1; transform: scale(1.1); }
-        .seat.booked { background: #475569; color: #94a3b8; cursor: not-allowed; opacity: 0.6; }
-        .seat.pending { background: #fbbf24; color: #000; cursor: not-allowed; opacity: 0.8; animation: pulse 1.5s infinite; }
+        .screen-curve { width: 100%; height: 20px; background: #e2e8f0; border-top-left-radius: 50%; border-top-right-radius: 50%; margin: 20px 0 10px 0; text-align: center; font-size: 0.6rem; color: #94a3b8; letter-spacing: 2px; padding-top: 5px; }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
-        }
+        .seat-grid-container { display: flex; margin-bottom: 25px; justify-content: center; }
+        .row-labels { display: flex; flex-direction: column; gap: 8px; margin-right: 10px; margin-top: 2px; }
+        .row-label { height: 22px; font-size: 0.7rem; font-weight: bold; color: #64748b; display: flex; align-items: center; }
+        
+        .grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+        .seat { width: 22px; height: 22px; border-radius: 4px; border: none; font-size: 0.55rem; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; }
+        
+        .seat.available { background: #4ade80; }
+        .seat.pending { background: #fbbf24; cursor: not-allowed; }
+        .seat.booked { background: #cbd5e1; cursor: not-allowed; color: #94a3b8; }
+        .seat.selected { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.5); transform: scale(1.1); }
 
-        /* Glassmorphism Modals */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); align-items: center; justify-content: center; backdrop-filter: blur(8px); z-index: 100; }
-        .modal-content { background: rgba(30, 41, 59, 0.9); padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .modal-content h3 { margin-top: 0; color: #f8fafc; }
+        .legend { display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748b; margin-bottom: 30px; }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .legend-box { width: 10px; height: 10px; border-radius: 2px; }
+
+        .checkout-bar { background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .checkout-flex { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .checkout-label { font-size: 0.7rem; color: #64748b; }
+        .checkout-value { font-size: 1rem; font-weight: bold; }
+        .btn { width: 100%; padding: 12px; background: #e2e8f0; color: #94a3b8; border: none; border-radius: 8px; font-weight: bold; cursor: not-allowed; transition: 0.3s; }
+        .btn.active { background: #2563eb; color: white; cursor: pointer; }
+        .btn.active:hover { background: #1d4ed8; }
+
+        .monitor-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; }
+        .monitor-title { font-size: 0.7rem; font-weight: bold; color: #64748b; letter-spacing: 1px; margin-bottom: 5px; }
+        .monitor-logs { font-family: monospace; font-size: 0.7rem; color: #334155; height: 80px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0; }
+
+        /* Simulated Payment Modal CSS */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: white; padding: 30px; border-radius: 16px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
         
-        input { width: 85%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .btn { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; padding: 14px 24px; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; margin-top: 20px; text-transform: uppercase; }
-        .btn:disabled { background: #475569; cursor: not-allowed; }
+        .success-icon { background: #10b981; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 15px auto; }
         
-        .qr-img { width: 180px; border-radius: 16px; margin: 15px 0; border: 2px solid #334155; }
-        #timer { color: #ef4444; font-weight: 900; font-size: 1.4rem; display: block; margin-bottom: 15px; }
-        
-        /* Legend */
-        .legend { display: flex; justify-content: center; gap: 20px; margin-top: 20px; font-size: 0.8rem; color: #94a3b8; }
-        .legend-item { display: flex; align-items: center; gap: 8px; }
-        .legend-box { width: 15px; height: 15px; border-radius: 4px; }
+        .receipt-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: left; }
+        .receipt-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .receipt-row:last-child { margin-bottom: 0; }
+        .receipt-label { color: #64748b; font-size: 0.85rem; }
+        .receipt-value { font-weight: bold; font-size: 0.9rem; color: #0f172a; }
     </style>
 </head>
 <body>
 
-    <h2>NextGen Cinemas</h2>
-    
-    <div class="screen-container">
-        <div class="screen"></div>
-        <div class="screen-text">SCREEN THIS WAY</div>
+<div class="app-container">
+    <div class="header">
+        <div class="subtitle">MOVIE TICKETS • SHOW 01</div>
+        <div class="title">Avengers: Endgame</div>
+        <div class="time-info">10:00 AM • Screen 1</div>
     </div>
-    
-    <!-- Empty Container to be filled dynamically by the Database -->
-    <div class="seating-area" id="seat-map">
-        <p style="grid-column: span 4; color: #94a3b8;">Loading live database...</p>
+
+    <div class="screen-curve">SCREEN</div>
+
+    <div class="seat-grid-container">
+        <div class="row-labels" id="row-labels"></div>
+        <div class="grid" id="seat-map"></div>
     </div>
 
     <div class="legend">
-        <div class="legend-item"><div class="legend-box" style="background: #e2e8f0;"></div> Available</div>
-        <div class="legend-item"><div class="legend-box" style="background: #fbbf24;"></div> Processing</div>
-        <div class="legend-item"><div class="legend-box" style="background: #475569;"></div> Booked</div>
+        <div class="legend-item"><div class="legend-box" style="background: #4ade80;"></div> Available</div>
+        <div class="legend-item"><div class="legend-box" style="background: #3b82f6;"></div> Selected</div>
+        <div class="legend-item"><div class="legend-box" style="background: #fbbf24;"></div> Held</div>
+        <div class="legend-item"><div class="legend-box" style="background: #cbd5e1;"></div> Booked</div>
     </div>
 
-    <!-- Details Modal -->
-    <div class="modal" id="detailsModal">
-        <div class="modal-content">
-            <h3>Booking Seat <span id="displaySeatNumber"></span></h3>
-            <span id="timer">05:00</span>
-            <input type="text" id="userName" placeholder="Full Name (e.g. Aniruddha)" required autocomplete="off">
-            <input type="tel" id="userPhone" placeholder="Mobile Number" required autocomplete="off">
-            <button class="btn" onclick="openPaymentModal(event)">Proceed to Payment</button>
+    <div class="checkout-bar">
+        <div class="checkout-flex">
+            <div>
+                <div class="checkout-label">Selected seats</div>
+                <div class="checkout-value" id="selected-seat-label">Choose your seat</div>
+            </div>
+            <div style="text-align: right;">
+                <div class="checkout-label">Total amount</div>
+                <div class="checkout-value" id="price-label">₹ 0</div>
+            </div>
+        </div>
+        <button class="btn" id="proceedBtn" onclick="initiatePaymentFlow()">Proceed to Payment</button>
+    </div>
+
+    <div class="monitor-card">
+        <div class="monitor-title">DBMS OBSERVER</div>
+        <div style="font-size: 0.8rem; font-weight: bold; margin-bottom: 10px;">Transaction Monitor</div>
+        <div class="monitor-logs" id="db-logs">
+            [SYS] Waiting for database events...<br>
         </div>
     </div>
+</div>
 
-    <!-- Payment Modal (REAL UPI LINK & UTR CHECK) -->
-    <div class="modal" id="paymentModal">
-        <div class="modal-content">
-            <h3>Scan or Tap to Pay ₹5</h3>
-            <a href="upi://pay?pa=walavalkaraniruddha@okaxis&pn=Aniruddha&am=5.00&cu=INR" target="_blank">
-                <img src="WhatsApp Image 2026-09-09 at 5.33.54 PM.jpeg" alt="QR Code" class="qr-img">
-            </a>
-            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0;">Tap image to open GPay. After paying, enter the Reference Number below.</p>
-            
-            <!-- UTR Input Field -->
-            <input type="number" id="utrNumber" placeholder="Enter 12-digit UPI Ref No." required autocomplete="off" style="text-align: center;">
-            
-            <button class="btn" id="verifyBtn" onclick="processBackendPayment()">Verify & Complete</button>
-            <p id="message" style="margin-top: 15px; font-weight: bold; font-size: 1.1rem;"></p>
+<!-- Simulated Payment Modal -->
+<div class="modal" id="paymentModal">
+    <div class="modal-content">
+        
+        <!-- View 1: Processing Spinner -->
+        <div id="processingView">
+            <div class="spinner"></div>
+            <h3 style="margin: 0 0 10px 0;">Processing Payment...</h3>
+            <p style="color: #64748b; font-size: 0.85rem; margin: 0;">Please do not close this app while your transaction is being confirmed.</p>
         </div>
+
+        <!-- View 2: Success Receipt -->
+        <div id="successView" style="display: none;">
+            <div class="success-icon">✓</div>
+            <h3 style="margin: 0 0 5px 0;">Payment Successful</h3>
+            <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 20px 0;">Your ticket has been booked!</p>
+            
+            <div class="receipt-box">
+                <div class="receipt-row">
+                    <span class="receipt-label">Seat Number</span>
+                    <span class="receipt-value" id="receiptSeat">--</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-label">Amount Paid</span>
+                    <span class="receipt-value">₹ 5.00</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-label">Transaction Status</span>
+                    <span class="receipt-value" style="color: #10b981;">Completed</span>
+                </div>
+            </div>
+            
+            <button class="btn active" onclick="location.reload()">Done</button>
+        </div>
+
     </div>
+</div>
 
-    <script>
-        let currentSeatId = null;
-        let timeLeft = 300; 
-        let timerInterval;
+<script>
+    let currentSelectedId = null;
 
-        // Fetches data directly from your Aiven MySQL database on load
-        async function loadSeats() {
-            try {
-                const res = await fetch('/api/seats');
-                const seats = await res.json();
-                
-                const map = document.getElementById('seat-map');
-                map.innerHTML = ''; 
+    function logEvent(msg) {
+        const logs = document.getElementById('db-logs');
+        logs.innerHTML += `> ${msg}<br>`;
+        logs.scrollTop = logs.scrollHeight;
+    }
 
-                seats.forEach(seat => {
-                    const btn = document.createElement('button');
-                    btn.className = `seat ${seat.status.toLowerCase()}`; 
-                    
-                    if(seat.status === 'AVAILABLE') {
-                        btn.innerText = seat.id;
-                        btn.onclick = () => openDetailsModal(seat.id);
-                    } else if (seat.status === 'PENDING') {
-                        btn.innerText = "⏳";
-                        btn.disabled = true;
-                    } else {
-                        btn.innerText = "X";
-                        btn.disabled = true;
-                    }
-                    map.appendChild(btn);
-                });
-            } catch (error) {
-                document.getElementById('seat-map').innerHTML = "<p>Database Connection Error</p>";
-            }
-        }
+    async function loadSeats() {
+        try {
+            const res = await fetch('/api/seats');
+            const seats = await res.json();
+            
+            const map = document.getElementById('seat-map');
+            const labels = document.getElementById('row-labels');
+            map.innerHTML = '';
+            labels.innerHTML = '';
 
-        window.onload = loadSeats;
+            const rowChars = ['A','B','C','D','E','F','G','H'];
+            rowChars.forEach(char => {
+                labels.innerHTML += `<div class="row-label">${char}</div>`;
+            });
 
-        function startTimer() {
-            timerInterval = setInterval(async () => {
-                timeLeft--;
-                let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-                let s = (timeLeft % 60).toString().padStart(2, '0');
-                document.getElementById('timer').innerText = `${m}:${s}`;
-                
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    await fetch('/release-seat', { 
-                        method: 'POST', 
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ seatId: currentSeatId }) 
-                    });
-                    alert("Time expired! Your seat has been released.");
-                    location.reload();
-                }
-            }, 1000);
-        }
+            seats.forEach(seat => {
+                const btn = document.createElement('button');
+                btn.className = `seat ${seat.status.toLowerCase()}`;
+                btn.innerText = ((seat.id - 1) % 10) + 1; 
 
-        function openDetailsModal(seatId) {
-            currentSeatId = seatId;
-            document.getElementById('displaySeatNumber').innerText = seatId;
-            document.getElementById('detailsModal').style.display = 'flex';
-            if(!timerInterval) startTimer();
-        }
-
-        async function openPaymentModal(event) {
-            const name = document.getElementById('userName').value;
-            if(!name) return alert('Please enter your name');
-
-            const btn = event.target;
-            btn.innerText = "Locking Seat in Database...";
-            btn.disabled = true;
-
-            try {
-                const res = await fetch('/hold-seat', { 
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ seatId: currentSeatId })
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    document.getElementById('detailsModal').style.display = 'none';
-                    document.getElementById('paymentModal').style.display = 'flex';
-                    loadSeats(); // Instantly turns the seat Yellow in the background
+                if(seat.status === 'AVAILABLE') {
+                    btn.onclick = () => selectSeat(btn, seat.id);
+                } else if(seat.status === 'PENDING') {
+                    btn.innerText = "⏳";
+                    btn.disabled = true;
                 } else {
-                    alert(data.message);
-                    location.reload(); 
+                    btn.innerText = "";
+                    btn.disabled = true;
                 }
-            } catch (err) {
-                alert("Server error");
-                btn.innerText = "Proceed to Payment";
-                btn.disabled = false;
-            }
+                map.appendChild(btn);
+            });
+            logEvent("[SYNC] Fetched 80 seats from local DB");
+        } catch (error) {
+            logEvent("[ERROR] Database connection failed");
         }
+    }
 
-        async function processBackendPayment() {
-            // UTR Verification Check
-            const utr = document.getElementById('utrNumber').value;
-            if(!utr || utr.length < 10) {
-                alert("Payment Verification Failed! Please enter a valid UPI Reference Number from GPay.");
-                return;
+    function selectSeat(btnElement, id) {
+        document.querySelectorAll('.seat.selected').forEach(el => {
+            el.classList.remove('selected');
+            el.classList.add('available');
+        });
+        
+        btnElement.classList.remove('available');
+        btnElement.classList.add('selected');
+        currentSelectedId = id;
+        
+        const rowChar = String.fromCharCode(65 + Math.floor((id-1)/10));
+        const colNum = ((id - 1) % 10) + 1;
+        
+        document.getElementById('selected-seat-label').innerText = `${rowChar}${colNum}`;
+        document.getElementById('price-label').innerText = `₹ 5`;
+        
+        const proceedBtn = document.getElementById('proceedBtn');
+        proceedBtn.classList.add('active');
+        proceedBtn.disabled = false;
+        
+        logEvent(`[ACTION] Local client selected Seat ${rowChar}${colNum} (ID: ${id})`);
+    }
+
+    // Step 1: Hold the seat and show the Fake "Processing" Spinner
+    async function initiatePaymentFlow() {
+        if(!currentSelectedId) return;
+        
+        const proceedBtn = document.getElementById('proceedBtn');
+        proceedBtn.innerText = "Connecting to Gateway...";
+        
+        logEvent(`[REQ] Sending UPDATE to hold Seat ID: ${currentSelectedId}`);
+        
+        try {
+            const res = await fetch('/hold-seat', { 
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ seatId: currentSelectedId })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                logEvent(`[LOCK] Success. Seat status = PENDING`);
+                
+                // Show the processing UI
+                document.getElementById('paymentModal').style.display = 'flex';
+                document.getElementById('processingView').style.display = 'block';
+                document.getElementById('successView').style.display = 'none';
+
+                // Force a fake 3-second delay to pretend it's processing a bank transaction
+                setTimeout(() => {
+                    finalizeSimulatedPayment();
+                }, 3000);
+
+            } else {
+                logEvent(`[REJECT] ${data.message}`);
+                alert("Race Condition Prevented! " + data.message);
+                location.reload(); 
             }
-
-            const btn = document.getElementById('verifyBtn');
-            const msg = document.getElementById('message');
-            btn.innerText = "Verifying UTR with Bank...";
-            btn.disabled = true;
-
-            try {
-                const res = await fetch('/book-seat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ seatId: currentSeatId, name: document.getElementById('userName').value })
-                });
-                const data = await res.json();
-
-                if(data.success) {
-                    msg.style.color = "#22c55e"; 
-                    msg.innerText = "✅ " + data.message;
-                    setTimeout(() => location.reload(), 3000);
-                } else {
-                    msg.style.color = "#ef4444"; 
-                    msg.innerText = "❌ " + data.message;
-                    btn.innerText = "Booking Closed";
-                }
-            } catch (err) {
-                msg.style.color = "#ef4444";
-                msg.innerText = "Server Error. Try again.";
-                btn.innerText = "Verify & Complete";
-                btn.disabled = false;
-            }
+        } catch (err) {
+            logEvent("[ERROR] Network failure");
         }
-    </script>
+    }
+
+    // Step 2: Actually book it in the DB and show "Success" receipt
+    async function finalizeSimulatedPayment() {
+        logEvent(`[VERIFY] Processing simulated payment...`);
+
+        try {
+            const res = await fetch('/book-seat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                // Uses a generic name since we removed the input fields for a cleaner UI
+                body: JSON.stringify({ seatId: currentSelectedId, name: "Demo User" })
+            });
+            const data = await res.json();
+
+            if(data.success) {
+                logEvent(`[COMMIT] Transaction successful for ID: ${currentSelectedId}`);
+                
+                // Calculate Seat Row/Number for the receipt
+                const rowChar = String.fromCharCode(65 + Math.floor((currentSelectedId-1)/10));
+                const colNum = ((currentSelectedId - 1) % 10) + 1;
+                document.getElementById('receiptSeat').innerText = `${rowChar}${colNum}`;
+
+                // Swap out the spinner for the green checkmark
+                document.getElementById('processingView').style.display = 'none';
+                document.getElementById('successView').style.display = 'block';
+            } else {
+                logEvent(`[ROLLBACK] Transaction failed`);
+                alert("Error: " + data.message);
+                location.reload();
+            }
+        } catch (err) {
+            alert("Server Error");
+            location.reload();
+        }
+    }
+
+    window.onload = loadSeats;
+</script>
 </body>
 </html>
