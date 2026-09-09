@@ -3,72 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Tickets</title>
+    <title>IMAX Booking</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 0; display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 420px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.05); padding: 20px; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #f1f1f1; margin: 0; padding: 0; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 420px; background: #141414; min-height: 100vh; padding: 20px; box-sizing: border-box; border-left: 1px solid #333; border-right: 1px solid #333; }
         
-        .header { margin-bottom: 25px; }
-        .subtitle { color: #64748b; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
-        .title { font-size: 1.5rem; font-weight: 800; margin: 5px 0; }
-        .time-info { color: #94a3b8; font-size: 0.85rem; }
+        .header { margin-bottom: 25px; text-align: center; }
+        .subtitle { color: #e50914; font-size: 0.75rem; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
+        .title { font-size: 1.8rem; font-weight: 900; margin: 5px 0; letter-spacing: 1px; text-transform: uppercase; }
+        .time-info { color: #888; font-size: 0.85rem; }
 
-        .screen-curve { width: 100%; height: 20px; background: #e2e8f0; border-top-left-radius: 50%; border-top-right-radius: 50%; margin: 20px 0 10px 0; text-align: center; font-size: 0.6rem; color: #94a3b8; letter-spacing: 2px; padding-top: 5px; }
+        .screen-curve { width: 100%; height: 25px; background: linear-gradient(to bottom, #333, transparent); border-top: 2px solid #555; border-top-left-radius: 50%; border-top-right-radius: 50%; margin: 20px 0 15px 0; text-align: center; font-size: 0.6rem; color: #777; letter-spacing: 3px; padding-top: 5px; }
 
         .seat-grid-container { display: flex; margin-bottom: 25px; justify-content: center; }
-        .row-labels { display: flex; flex-direction: column; gap: 8px; margin-right: 10px; margin-top: 2px; }
-        .row-label { height: 22px; font-size: 0.7rem; font-weight: bold; color: #64748b; display: flex; align-items: center; }
+        .row-labels { display: flex; flex-direction: column; gap: 8px; margin-right: 12px; margin-top: 2px; }
+        .row-label { height: 22px; font-size: 0.7rem; font-weight: bold; color: #888; display: flex; align-items: center; }
         
         .grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
-        .seat { width: 22px; height: 22px; border-radius: 4px; border: none; font-size: 0.55rem; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; }
+        .seat { width: 22px; height: 22px; border-radius: 4px; border: none; font-size: 0.55rem; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; background: #333; }
         
-        .seat.available { background: #4ade80; }
-        .seat.pending { background: #fbbf24; cursor: not-allowed; }
-        .seat.booked { background: #cbd5e1; cursor: not-allowed; color: #94a3b8; }
-        .seat.selected { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.5); transform: scale(1.1); }
+        .seat.available:hover { background: #555; }
+        .seat.pending { background: #f59e0b; cursor: not-allowed; color: black; }
+        .seat.booked { background: #1a1a1a; cursor: not-allowed; color: #333; opacity: 0.5; }
+        .seat.selected { background: #e50914; box-shadow: 0 0 10px rgba(229, 9, 20, 0.6); transform: scale(1.15); }
 
-        .legend { display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748b; margin-bottom: 30px; }
-        .legend-item { display: flex; align-items: center; gap: 4px; }
-        .legend-box { width: 10px; height: 10px; border-radius: 2px; }
+        .legend { display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; margin-bottom: 30px; padding: 0 10px; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-box { width: 12px; height: 12px; border-radius: 2px; }
 
-        .checkout-bar { background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .checkout-bar { background: #1f1f1f; border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid #333; }
         .checkout-flex { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .checkout-label { font-size: 0.7rem; color: #64748b; }
-        .checkout-value { font-size: 1rem; font-weight: bold; }
-        .btn { width: 100%; padding: 12px; background: #e2e8f0; color: #94a3b8; border: none; border-radius: 8px; font-weight: bold; cursor: not-allowed; transition: 0.3s; }
-        .btn.active { background: #2563eb; color: white; cursor: pointer; }
-        .btn.active:hover { background: #1d4ed8; }
+        .checkout-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .checkout-value { font-size: 1.1rem; font-weight: bold; color: white; }
+        .btn { width: 100%; padding: 14px; background: #333; color: #888; border: none; border-radius: 8px; font-weight: bold; cursor: not-allowed; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
+        .btn.active { background: #e50914; color: white; cursor: pointer; }
+        .btn.active:hover { background: #b9090b; }
 
-        .monitor-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; }
-        .monitor-title { font-size: 0.7rem; font-weight: bold; color: #64748b; letter-spacing: 1px; margin-bottom: 5px; }
-        .monitor-logs { font-family: monospace; font-size: 0.7rem; color: #334155; height: 80px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0; }
+        .monitor-card { background: #000; border: 1px solid #333; border-radius: 8px; padding: 15px; }
+        .monitor-title { font-size: 0.7rem; font-weight: bold; color: #e50914; letter-spacing: 1px; margin-bottom: 5px; }
+        .monitor-logs { font-family: monospace; font-size: 0.7rem; color: #4ade80; height: 80px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #222; }
 
         /* Simulated Payment Modal CSS */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100; }
-        .modal-content { background: white; padding: 30px; border-radius: 16px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
+        .modal-content { background: #141414; padding: 30px; border-radius: 16px; width: 85%; max-width: 350px; text-align: center; border: 1px solid #333; }
         
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+        .spinner { border: 4px solid #333; border-top: 4px solid #e50914; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .success-icon { background: #10b981; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 15px auto; }
         
-        .receipt-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: left; }
+        .receipt-box { background: #1f1f1f; border: 1px solid #333; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: left; }
         .receipt-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .receipt-row:last-child { margin-bottom: 0; }
-        .receipt-label { color: #64748b; font-size: 0.85rem; }
-        .receipt-value { font-weight: bold; font-size: 0.9rem; color: #0f172a; }
+        .receipt-label { color: #888; font-size: 0.85rem; }
+        .receipt-value { font-weight: bold; font-size: 0.9rem; color: white; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="header">
-        <div class="subtitle">MOVIE TICKETS • SHOW 01</div>
-        <div class="title">Avengers: Endgame</div>
-        <div class="time-info">10:00 AM • Screen 1</div>
+        <div class="subtitle">IMAX EXCLUSIVE</div>
+        <div class="title">Dune: Part Two</div>
+        <div class="time-info">09:30 PM • Screen 4</div>
     </div>
 
-    <div class="screen-curve">SCREEN</div>
+    <div class="screen-curve">IMAX SCREEN</div>
 
     <div class="seat-grid-container">
         <div class="row-labels" id="row-labels"></div>
@@ -76,20 +75,20 @@
     </div>
 
     <div class="legend">
-        <div class="legend-item"><div class="legend-box" style="background: #4ade80;"></div> Available</div>
-        <div class="legend-item"><div class="legend-box" style="background: #3b82f6;"></div> Selected</div>
-        <div class="legend-item"><div class="legend-box" style="background: #fbbf24;"></div> Held</div>
-        <div class="legend-item"><div class="legend-box" style="background: #cbd5e1;"></div> Booked</div>
+        <div class="legend-item"><div class="legend-box" style="background: #333;"></div> Available</div>
+        <div class="legend-item"><div class="legend-box" style="background: #e50914;"></div> Selected</div>
+        <div class="legend-item"><div class="legend-box" style="background: #f59e0b;"></div> Held</div>
+        <div class="legend-item"><div class="legend-box" style="background: #1a1a1a;"></div> Booked</div>
     </div>
 
     <div class="checkout-bar">
         <div class="checkout-flex">
             <div>
-                <div class="checkout-label">Selected seats</div>
-                <div class="checkout-value" id="selected-seat-label">Choose your seat</div>
+                <div class="checkout-label">Selected Seat</div>
+                <div class="checkout-value" id="selected-seat-label">--</div>
             </div>
             <div style="text-align: right;">
-                <div class="checkout-label">Total amount</div>
+                <div class="checkout-label">Total Amount</div>
                 <div class="checkout-value" id="price-label">₹ 0</div>
             </div>
         </div>
@@ -97,10 +96,10 @@
     </div>
 
     <div class="monitor-card">
-        <div class="monitor-title">DBMS OBSERVER</div>
-        <div style="font-size: 0.8rem; font-weight: bold; margin-bottom: 10px;">Transaction Monitor</div>
+        <div class="monitor-title">DATABASE TERMINAL</div>
+        <div style="font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; color: #fff;">Transaction Monitor</div>
         <div class="monitor-logs" id="db-logs">
-            [SYS] Waiting for database events...<br>
+            [SYS] Connected to Aiven Cloud Database...<br>
         </div>
     </div>
 </div>
@@ -108,19 +107,18 @@
 <!-- Simulated Payment Modal -->
 <div class="modal" id="paymentModal">
     <div class="modal-content">
-        
         <!-- View 1: Processing Spinner -->
         <div id="processingView">
             <div class="spinner"></div>
-            <h3 style="margin: 0 0 10px 0;">Processing Payment...</h3>
-            <p style="color: #64748b; font-size: 0.85rem; margin: 0;">Please do not close this app while your transaction is being confirmed.</p>
+            <h3 style="margin: 0 0 10px 0; color: white;">Processing Payment...</h3>
+            <p style="color: #888; font-size: 0.85rem; margin: 0;">Securing your seat in the database.</p>
         </div>
 
         <!-- View 2: Success Receipt -->
         <div id="successView" style="display: none;">
             <div class="success-icon">✓</div>
-            <h3 style="margin: 0 0 5px 0;">Payment Successful</h3>
-            <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 20px 0;">Your ticket has been booked!</p>
+            <h3 style="margin: 0 0 5px 0; color: white;">Booking Confirmed</h3>
+            <p style="color: #888; font-size: 0.85rem; margin: 0 0 20px 0;">Enjoy the movie!</p>
             
             <div class="receipt-box">
                 <div class="receipt-row">
@@ -129,17 +127,16 @@
                 </div>
                 <div class="receipt-row">
                     <span class="receipt-label">Amount Paid</span>
-                    <span class="receipt-value">₹ 5.00</span>
+                    <span class="receipt-value">₹ 250.00</span>
                 </div>
                 <div class="receipt-row">
-                    <span class="receipt-label">Transaction Status</span>
-                    <span class="receipt-value" style="color: #10b981;">Completed</span>
+                    <span class="receipt-label">Status</span>
+                    <span class="receipt-value" style="color: #10b981;">SUCCESS</span>
                 </div>
             </div>
             
-            <button class="btn active" onclick="location.reload()">Done</button>
+            <button class="btn active" onclick="location.reload()">Return to Home</button>
         </div>
-
     </div>
 </div>
 
@@ -178,12 +175,12 @@
                     btn.innerText = "⏳";
                     btn.disabled = true;
                 } else {
-                    btn.innerText = "";
+                    btn.innerText = "X";
                     btn.disabled = true;
                 }
                 map.appendChild(btn);
             });
-            logEvent("[SYNC] Fetched 80 seats from local DB");
+            logEvent("[SYNC] Retrieved 80 seats from Aiven MySQL");
         } catch (error) {
             logEvent("[ERROR] Database connection failed");
         }
@@ -203,23 +200,23 @@
         const colNum = ((id - 1) % 10) + 1;
         
         document.getElementById('selected-seat-label').innerText = `${rowChar}${colNum}`;
-        document.getElementById('price-label').innerText = `₹ 5`;
+        document.getElementById('price-label').innerText = `₹ 250`;
         
         const proceedBtn = document.getElementById('proceedBtn');
         proceedBtn.classList.add('active');
         proceedBtn.disabled = false;
         
-        logEvent(`[ACTION] Local client selected Seat ${rowChar}${colNum} (ID: ${id})`);
+        logEvent(`[CLIENT] Selected Seat ${rowChar}${colNum} (DB_ID: ${id})`);
     }
 
-    // Step 1: Hold the seat and show the Fake "Processing" Spinner
     async function initiatePaymentFlow() {
         if(!currentSelectedId) return;
         
         const proceedBtn = document.getElementById('proceedBtn');
-        proceedBtn.innerText = "Connecting to Gateway...";
+        proceedBtn.innerText = "Locking Seat...";
+        proceedBtn.classList.remove('active');
         
-        logEvent(`[REQ] Sending UPDATE to hold Seat ID: ${currentSelectedId}`);
+        logEvent(`[REQ] Locking Seat ID: ${currentSelectedId} with Pessimistic Lock`);
         
         try {
             const res = await fetch('/hold-seat', { 
@@ -230,20 +227,18 @@
             const data = await res.json();
 
             if (data.success) {
-                logEvent(`[LOCK] Success. Seat status = PENDING`);
+                logEvent(`[LOCK] Success. Status = PENDING`);
                 
-                // Show the processing UI
                 document.getElementById('paymentModal').style.display = 'flex';
                 document.getElementById('processingView').style.display = 'block';
                 document.getElementById('successView').style.display = 'none';
 
-                // Force a fake 3-second delay to pretend it's processing a bank transaction
                 setTimeout(() => {
                     finalizeSimulatedPayment();
                 }, 3000);
 
             } else {
-                logEvent(`[REJECT] ${data.message}`);
+                logEvent(`[REJECT] Transaction Denied.`);
                 alert("Race Condition Prevented! " + data.message);
                 location.reload(); 
             }
@@ -252,28 +247,24 @@
         }
     }
 
-    // Step 2: Actually book it in the DB and show "Success" receipt
     async function finalizeSimulatedPayment() {
-        logEvent(`[VERIFY] Processing simulated payment...`);
+        logEvent(`[VERIFY] Payment complete. Committing to DB...`);
 
         try {
             const res = await fetch('/book-seat', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                // Uses a generic name since we removed the input fields for a cleaner UI
                 body: JSON.stringify({ seatId: currentSelectedId, name: "Demo User" })
             });
             const data = await res.json();
 
             if(data.success) {
-                logEvent(`[COMMIT] Transaction successful for ID: ${currentSelectedId}`);
+                logEvent(`[COMMIT] DB Updated. Seat ID: ${currentSelectedId} is BOOKED.`);
                 
-                // Calculate Seat Row/Number for the receipt
                 const rowChar = String.fromCharCode(65 + Math.floor((currentSelectedId-1)/10));
                 const colNum = ((currentSelectedId - 1) % 10) + 1;
                 document.getElementById('receiptSeat').innerText = `${rowChar}${colNum}`;
 
-                // Swap out the spinner for the green checkmark
                 document.getElementById('processingView').style.display = 'none';
                 document.getElementById('successView').style.display = 'block';
             } else {
