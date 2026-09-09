@@ -57,7 +57,7 @@
         <div class="screen-text">SCREEN THIS WAY</div>
     </div>
     
-    <!-- Empty Container to be filled by Database -->
+    <!-- Empty Container to be filled dynamically by the Database -->
     <div class="seating-area" id="seat-map">
         <p style="grid-column: span 4; color: #94a3b8;">Loading live database...</p>
     </div>
@@ -79,14 +79,18 @@
         </div>
     </div>
 
-    <!-- Payment Modal (REAL UPI LINK) -->
+    <!-- Payment Modal (REAL UPI LINK & UTR CHECK) -->
     <div class="modal" id="paymentModal">
         <div class="modal-content">
             <h3>Scan or Tap to Pay ₹5</h3>
             <a href="upi://pay?pa=walavalkaraniruddha@okaxis&pn=Aniruddha&am=5.00&cu=INR" target="_blank">
                 <img src="WhatsApp Image 2026-09-09 at 5.33.54 PM.jpeg" alt="QR Code" class="qr-img">
             </a>
-            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0;">Tap image to open GPay. After paying, click Verify.</p>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0;">Tap image to open GPay. After paying, enter the Reference Number below.</p>
+            
+            <!-- UTR Input Field -->
+            <input type="number" id="utrNumber" placeholder="Enter 12-digit UPI Ref No." required autocomplete="off" style="text-align: center;">
+            
             <button class="btn" id="verifyBtn" onclick="processBackendPayment()">Verify & Complete</button>
             <p id="message" style="margin-top: 15px; font-weight: bold; font-size: 1.1rem;"></p>
         </div>
@@ -108,7 +112,7 @@
 
                 seats.forEach(seat => {
                     const btn = document.createElement('button');
-                    btn.className = `seat ${seat.status.toLowerCase()}`; // Assigns available, booked, or pending CSS
+                    btn.className = `seat ${seat.status.toLowerCase()}`; 
                     
                     if(seat.status === 'AVAILABLE') {
                         btn.innerText = seat.id;
@@ -127,7 +131,6 @@
             }
         }
 
-        // Run when the page opens
         window.onload = loadSeats;
 
         function startTimer() {
@@ -176,8 +179,7 @@
                 if (data.success) {
                     document.getElementById('detailsModal').style.display = 'none';
                     document.getElementById('paymentModal').style.display = 'flex';
-                    // Optional: Call loadSeats() here to instantly turn the seat Yellow in the background!
-                    loadSeats();
+                    loadSeats(); // Instantly turns the seat Yellow in the background
                 } else {
                     alert(data.message);
                     location.reload(); 
@@ -190,9 +192,16 @@
         }
 
         async function processBackendPayment() {
+            // UTR Verification Check
+            const utr = document.getElementById('utrNumber').value;
+            if(!utr || utr.length < 10) {
+                alert("Payment Verification Failed! Please enter a valid UPI Reference Number from GPay.");
+                return;
+            }
+
             const btn = document.getElementById('verifyBtn');
             const msg = document.getElementById('message');
-            btn.innerText = "Verifying on Server...";
+            btn.innerText = "Verifying UTR with Bank...";
             btn.disabled = true;
 
             try {
@@ -206,7 +215,6 @@
                 if(data.success) {
                     msg.style.color = "#22c55e"; 
                     msg.innerText = "✅ " + data.message;
-                    // Reloads the page so the database grid updates to show 'X' (Booked)
                     setTimeout(() => location.reload(), 3000);
                 } else {
                     msg.style.color = "#ef4444"; 
@@ -216,6 +224,8 @@
             } catch (err) {
                 msg.style.color = "#ef4444";
                 msg.innerText = "Server Error. Try again.";
+                btn.innerText = "Verify & Complete";
+                btn.disabled = false;
             }
         }
     </script>
