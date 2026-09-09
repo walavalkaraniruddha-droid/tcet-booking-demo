@@ -18,7 +18,7 @@ const pool = mysql.createPool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Setup Table Route (Run once by visiting /setup in your browser)
+// Setup Table Route
 app.get('/setup', async (req, res) => {
     await pool.query(`CREATE TABLE IF NOT EXISTS seats (id INT PRIMARY KEY, status VARCHAR(20), booked_by VARCHAR(50))`);
     await pool.query(`INSERT IGNORE INTO seats (id, status, booked_by) VALUES (1, 'AVAILABLE', NULL)`);
@@ -26,25 +26,44 @@ app.get('/setup', async (req, res) => {
     res.send('Database Ready! Go to the main page.');
 });
 
-// The Race Condition Logic
-app.post('/book-seat', async (req, res) => {
-    const { name, phone } = req.body;
-
+// STEP 1: Hold the seat BEFORE payment (Changes status to PENDING)
+app.post('/hold-seat', async (req, res) => {
     try {
-        // Atomic Update: Only updates if the seat is still AVAILABLE
         const [result] = await pool.query(
-            `UPDATE seats SET status = 'BOOKED', booked_by = ? WHERE id = 1 AND status = 'AVAILABLE'`,
+            `UPDATE seats SET status = 'PENDING' WHERE id = 1 AND status = 'AVAILABLE'`
+        );
+        if (result.affectedRows === 1) {
+            res.json({ success: true });
+        } else {
+            res.json({ success: false, message: 'Someone else is currently paying for this seat!' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false });
+    }
+});
+
+// STEP 2: Finalize the booking AFTER payment (Changes PENDING to BOOKED)
+app.post('/book-seat', async (req, res) => {
+    const { name } = req.body;
+    try {
+        const [result] = await pool.query(
+            `UPDATE seats SET status = 'BOOKED', booked_by = ? WHERE id = 1 AND status = 'PENDING'`,
             [name]
         );
-
         if (result.affectedRows === 1) {
             res.json({ success: true, message: `Payment Verified! Seat allocated to ${name}.` });
         } else {
-            res.json({ success: false, message: `Payment Failed! Seat was just booked by someone else.` });
+            res.json({ success: false, message: `Booking Failed.` });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false });
     }
+});
+
+// STEP 3: Release seat if timer runs out
+app.post('/release-seat', async (req, res) => {
+    await pool.query(`UPDATE seats SET status = 'AVAILABLE' WHERE id = 1 AND status = 'PENDING'`);
+    res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 3000;
