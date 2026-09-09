@@ -18,7 +18,7 @@ const pool = mysql.createPool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Setup Route: Creates 16 seats. Pre-books a few so it looks realistic!
+// Setup Route: Creates 16 seats dynamically
 app.get('/setup', async (req, res) => {
     await pool.query(`CREATE TABLE IF NOT EXISTS seats (id INT PRIMARY KEY, status VARCHAR(20), booked_by VARCHAR(50))`);
     
