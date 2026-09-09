@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextGen Cinemas</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
+        .screen { background: linear-gradient(90deg, #38bdf8, #818cf8); height: 8px; width: 80%; margin: 40px auto; border-radius: 4px; box-shadow: 0 10px 30px rgba(56, 189, 248, 0.5); }
+        .seat { width: 50px; height: 50px; border-radius: 12px; background: #334155; border: none; cursor: not-allowed; margin: 10px; display: inline-block; }
+        .seat.available { background: #22c55e; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); }
+        .seat.available:hover { transform: translateY(-5px); }
+        .seat.booked { background: #ef4444; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #334155; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; }
+        .btn { background: #3b82f6; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
+        .btn:hover { background: #2563eb; }
+        .qr-img { width: 200px; border-radius: 12px; margin: 15px 0; }
+        #timer { color: #facc15; font-weight: bold; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <h2>NextGen Cinemas - Select Your Seat</h2>
+    <div class="screen"></div>
+    <p style="color: #94a3b8; font-size: 0.9rem;">SCREEN THIS WAY</p>
+    
+    <div>
+        <button class="seat"></button><button class="seat available" id="vipSeat" onclick="openDetailsModal()">VIP</button><button class="seat"></button>
+    </div>
+
+    <!-- Step 1: Details Modal -->
+    <div class="modal" id="detailsModal">
+        <div class="modal-content">
+            <h3>Enter Details</h3>
+            <p>Time remaining: <span id="timer">05:00</span></p>
+            <input type="text" id="userName" placeholder="Full Name (e.g. Aniruddha)" required>
+            <input type="tel" id="userPhone" placeholder="Mobile Number" required>
+            <button class="btn" onclick="openPaymentModal()">Proceed to Payment</button>
+        </div>
+    </div>
+
+    <!-- Step 2: Payment Modal -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-content">
+            <h3>Scan or Click to Pay ₹5</h3>
+            <!-- Clicking the image triggers GPay/UPI apps directly on mobile -->
+            <a href="upi://pay?pa=walavalkaraniruddha@okaxis&pn=Aniruddha&am=5.00&cu=INR" target="_blank">
+                <img src="WhatsApp Image 2026-09-09 at 5.33.54 PM.jpeg" alt="QR Code" class="qr-img">
+            </a>
+            <p style="font-size: 0.8rem; color: #94a3b8;">Tap the QR code to open UPI app.</p>
+            <button class="btn" id="verifyBtn" onclick="processBackendPayment()">Verify & Complete Booking</button>
+            <p id="message" style="margin-top: 15px; font-weight: bold;"></p>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft = 300; 
+        let timerInterval;
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                let s = (timeLeft % 60).toString().padStart(2, '0');
+                document.getElementById('timer').innerText = `${m}:${s}`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Time expired!");
+                    location.reload();
+                }
+            }, 1000);
+        }
+
+        function openDetailsModal() {
+            document.getElementById('detailsModal').style.display = 'flex';
+            startTimer();
+        }
+
+        function openPaymentModal() {
+            const name = document.getElementById('userName').value;
+            if(!name) return alert('Enter your name');
+            document.getElementById('detailsModal').style.display = 'none';
+            document.getElementById('paymentModal').style.display = 'flex';
+        }
+
+        async function processBackendPayment() {
+            const btn = document.getElementById('verifyBtn');
+            const msg = document.getElementById('message');
+            btn.innerText = "Verifying on Server...";
+            btn.disabled = true;
+
+            const res = await fetch('/book-seat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: document.getElementById('userName').value })
+            });
+            const data = await res.json();
+
+            if(data.success) {
+                msg.style.color = "#22c55e";
+                msg.innerText = data.message;
+                setTimeout(() => location.reload(), 3000);
+            } else {
+                msg.style.color = "#ef4444";
+                msg.innerText = data.message;
+                btn.innerText = "Booking Closed";
+            }
+        }
+    </script>
+</body>
+</html>
