@@ -13,7 +13,7 @@ const pool = mysql.createPool({
     host: 'mysql-2bd3bf6d-walavalkaraniruddha-33a2.k.aivencloud.com',
     port: 12841,
     user: 'avnadmin',
-    password: 'AVNS_42hd-tcXmy99xTXw13w',
+    password: 'AVNS_42hd-tsXmy99xTXwl3w',
     database: 'defaultdb',
     ssl: { rejectUnauthorized: false }
 });
