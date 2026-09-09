@@ -18,40 +18,60 @@ const pool = mysql.createPool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Setup Table Route
+// Setup Route: Creates 16 seats. Pre-books a few so it looks realistic!
 app.get('/setup', async (req, res) => {
     await pool.query(`CREATE TABLE IF NOT EXISTS seats (id INT PRIMARY KEY, status VARCHAR(20), booked_by VARCHAR(50))`);
-    await pool.query(`INSERT IGNORE INTO seats (id, status, booked_by) VALUES (1, 'AVAILABLE', NULL)`);
-    await pool.query(`UPDATE seats SET status = 'AVAILABLE', booked_by = NULL WHERE id = 1`);
-    res.send('Database Ready! Go to the main page.');
+    
+    // Insert 16 seats
+    for(let i = 1; i <= 16; i++) {
+        await pool.query(`INSERT IGNORE INTO seats (id, status, booked_by) VALUES (?, 'AVAILABLE', NULL)`, [i]);
+    }
+    
+    // Reset all to AVAILABLE, then randomly BOOK a few for the presentation demo
+    await pool.query(`UPDATE seats SET status = 'AVAILABLE', booked_by = NULL`);
+    await pool.query(`UPDATE seats SET status = 'BOOKED', booked_by = 'Admin' WHERE id IN (2, 3, 8, 14)`);
+    
+    res.send('Database Ready! 16 Dynamic seats created. Go to the main page.');
 });
 
-// STEP 1: Hold the seat BEFORE payment (Changes status to PENDING)
+// Fetch all seats dynamically for the UI
+app.get('/api/seats', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT id, status FROM seats ORDER BY id');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Hold the specific seat BEFORE payment
 app.post('/hold-seat', async (req, res) => {
+    const { seatId } = req.body;
     try {
         const [result] = await pool.query(
-            `UPDATE seats SET status = 'PENDING' WHERE id = 1 AND status = 'AVAILABLE'`
+            `UPDATE seats SET status = 'PENDING' WHERE id = ? AND status = 'AVAILABLE'`,
+            [seatId]
         );
         if (result.affectedRows === 1) {
             res.json({ success: true });
         } else {
-            res.json({ success: false, message: 'Someone else is currently paying for this seat!' });
+            res.json({ success: false, message: 'Seat is currently being booked by someone else!' });
         }
     } catch (error) {
         res.status(500).json({ success: false });
     }
 });
 
-// STEP 2: Finalize the booking AFTER payment (Changes PENDING to BOOKED)
+// Finalize the specific booking AFTER payment
 app.post('/book-seat', async (req, res) => {
-    const { name } = req.body;
+    const { seatId, name } = req.body;
     try {
         const [result] = await pool.query(
-            `UPDATE seats SET status = 'BOOKED', booked_by = ? WHERE id = 1 AND status = 'PENDING'`,
-            [name]
+            `UPDATE seats SET status = 'BOOKED', booked_by = ? WHERE id = ? AND status = 'PENDING'`,
+            [name, seatId]
         );
         if (result.affectedRows === 1) {
-            res.json({ success: true, message: `Payment Verified! Seat allocated to ${name}.` });
+            res.json({ success: true, message: `Payment Verified! Seat ${seatId} booked for ${name}.` });
         } else {
             res.json({ success: false, message: `Booking Failed.` });
         }
@@ -60,9 +80,10 @@ app.post('/book-seat', async (req, res) => {
     }
 });
 
-// STEP 3: Release seat if timer runs out
+// Release specific seat if timer runs out
 app.post('/release-seat', async (req, res) => {
-    await pool.query(`UPDATE seats SET status = 'AVAILABLE' WHERE id = 1 AND status = 'PENDING'`);
+    const { seatId } = req.body;
+    await pool.query(`UPDATE seats SET status = 'AVAILABLE' WHERE id = ? AND status = 'PENDING'`, [seatId]);
     res.json({ success: true });
 });
 
