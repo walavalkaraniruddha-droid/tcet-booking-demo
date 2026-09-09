@@ -18,20 +18,32 @@ const pool = mysql.createPool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Setup Route: Creates 16 seats dynamically
+// Setup Route: Wipes old data and creates 80 fresh seats
 app.get('/setup', async (req, res) => {
-    await pool.query(`CREATE TABLE IF NOT EXISTS seats (id INT PRIMARY KEY, status VARCHAR(20), booked_by VARCHAR(50))`);
+    // Drop the old 16-seat table to fix your grid!
+    await pool.query(`DROP TABLE IF EXISTS seats`);
+    await pool.query(`CREATE TABLE seats (id INT PRIMARY KEY, status VARCHAR(20), booked_by VARCHAR(50))`);
     
-    // Insert 16 seats
-    for(let i = 1; i <= 16; i++) {
-        await pool.query(`INSERT IGNORE INTO seats (id, status, booked_by) VALUES (?, 'AVAILABLE', NULL)`, [i]);
+    // Insert all 80 seats
+    for(let i = 1; i <= 80; i++) {
+        await pool.query(`INSERT INTO seats (id, status, booked_by) VALUES (?, 'AVAILABLE', NULL)`, [i]);
     }
     
-    // Reset all to AVAILABLE, then randomly BOOK a few for the presentation demo
-    await pool.query(`UPDATE seats SET status = 'AVAILABLE', booked_by = NULL`);
-    await pool.query(`UPDATE seats SET status = 'BOOKED', booked_by = 'Admin' WHERE id IN (2, 3, 8, 14)`);
+    // Randomly book a realistic pattern of seats for the demo
+    const bookedSeats = [3, 4, 12, 15, 25, 26, 27, 45, 46, 68, 79];
+    await pool.query(`UPDATE seats SET status = 'BOOKED', booked_by = 'Admin' WHERE id IN (?)`, [bookedSeats]);
     
-    res.send('Database Ready! 16 Dynamic seats created. Go to the main page.');
+    res.send('Database Reset! 80 seats created. Go to the main page.');
+});
+
+// Admin Route: To view your raw MySQL Database in the browser
+app.get('/admin', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM seats');
+        res.json({ total_seats: rows.length, database_data: rows });
+    } catch (error) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Fetch all seats dynamically for the UI
@@ -44,47 +56,32 @@ app.get('/api/seats', async (req, res) => {
     }
 });
 
-// Hold the specific seat BEFORE payment
 app.post('/hold-seat', async (req, res) => {
     const { seatId } = req.body;
     try {
-        const [result] = await pool.query(
-            `UPDATE seats SET status = 'PENDING' WHERE id = ? AND status = 'AVAILABLE'`,
-            [seatId]
-        );
+        const [result] = await pool.query(`UPDATE seats SET status = 'PENDING' WHERE id = ? AND status = 'AVAILABLE'`, [seatId]);
         if (result.affectedRows === 1) {
             res.json({ success: true });
         } else {
-            res.json({ success: false, message: 'Seat is currently being booked by someone else!' });
+            res.json({ success: false, message: 'Seat is currently held by someone else!' });
         }
     } catch (error) {
         res.status(500).json({ success: false });
     }
 });
 
-// Finalize the specific booking AFTER payment
 app.post('/book-seat', async (req, res) => {
     const { seatId, name } = req.body;
     try {
-        const [result] = await pool.query(
-            `UPDATE seats SET status = 'BOOKED', booked_by = ? WHERE id = ? AND status = 'PENDING'`,
-            [name, seatId]
-        );
+        const [result] = await pool.query(`UPDATE seats SET status = 'BOOKED', booked_by = ? WHERE id = ? AND status = 'PENDING'`, [name, seatId]);
         if (result.affectedRows === 1) {
-            res.json({ success: true, message: `Payment Verified! Seat ${seatId} booked for ${name}.` });
+            res.json({ success: true, message: `Seat ${seatId} booked!` });
         } else {
             res.json({ success: false, message: `Booking Failed.` });
         }
     } catch (error) {
         res.status(500).json({ success: false });
     }
-});
-
-// Release specific seat if timer runs out
-app.post('/release-seat', async (req, res) => {
-    const { seatId } = req.body;
-    await pool.query(`UPDATE seats SET status = 'AVAILABLE' WHERE id = ? AND status = 'PENDING'`, [seatId]);
-    res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 3000;
