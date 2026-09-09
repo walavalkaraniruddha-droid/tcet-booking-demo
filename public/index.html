@@ -96,7 +96,8 @@
             <span id="timer">05:00</span>
             <input type="text" id="userName" placeholder="Full Name (e.g. Aniruddha)" required autocomplete="off">
             <input type="tel" id="userPhone" placeholder="Mobile Number" required autocomplete="off">
-            <button class="btn" onclick="openPaymentModal()">Proceed to Payment</button>
+            <!-- IMPORTANT: Passes 'event' to the function to disable the button while loading -->
+            <button class="btn" onclick="openPaymentModal(event)">Proceed to Payment</button>
         </div>
     </div>
 
@@ -105,7 +106,7 @@
         <div class="modal-content">
             <h3>Scan or Tap to Pay ₹5</h3>
             
-            <!-- THE REAL DEEP LINK IS RESTORED HERE -->
+            <!-- THE REAL DEEP LINK -->
             <a href="upi://pay?pa=walavalkaraniruddha@okaxis&pn=Aniruddha&am=5.00&cu=INR" target="_blank">
                 <img src="WhatsApp Image 2026-09-09 at 5.33.54 PM.jpeg" alt="QR Code" class="qr-img">
             </a>
@@ -121,14 +122,17 @@
         let timerInterval;
 
         function startTimer() {
-            timerInterval = setInterval(() => {
+            timerInterval = setInterval(async () => {
                 timeLeft--;
                 let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
                 let s = (timeLeft % 60).toString().padStart(2, '0');
                 document.getElementById('timer').innerText = `${m}:${s}`;
+                
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    alert("Session expired!");
+                    // Tell server to un-lock the seat since time ran out
+                    await fetch('/release-seat', { method: 'POST' });
+                    alert("Time expired! Your seat has been released.");
                     location.reload();
                 }
             }, 1000);
@@ -139,11 +143,31 @@
             if(!timerInterval) startTimer();
         }
 
-        function openPaymentModal() {
+        async function openPaymentModal(event) {
             const name = document.getElementById('userName').value;
             if(!name) return alert('Please enter your name');
-            document.getElementById('detailsModal').style.display = 'none';
-            document.getElementById('paymentModal').style.display = 'flex';
+
+            const btn = event.target;
+            btn.innerText = "Checking Seat Availability...";
+            btn.disabled = true;
+
+            // Ask server to hold the seat BEFORE showing QR
+            try {
+                const res = await fetch('/hold-seat', { method: 'POST' });
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('detailsModal').style.display = 'none';
+                    document.getElementById('paymentModal').style.display = 'flex';
+                } else {
+                    alert("Too late! " + data.message);
+                    location.reload(); // Kick them back to the main screen
+                }
+            } catch (err) {
+                alert("Server error");
+                btn.innerText = "Proceed to Payment";
+                btn.disabled = false;
+            }
         }
 
         async function processBackendPayment() {
