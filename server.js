@@ -20,7 +20,6 @@ const pool = mysql.createPool({
 
 // Setup Route: Wipes old data and creates 80 fresh seats
 app.get('/setup', async (req, res) => {
-    // Drop the old 16-seat table to fix your grid!
     await pool.query(`DROP TABLE IF EXISTS seats`);
     await pool.query(`CREATE TABLE seats (id INT PRIMARY KEY, status VARCHAR(20), booked_by VARCHAR(50))`);
     
@@ -29,14 +28,14 @@ app.get('/setup', async (req, res) => {
         await pool.query(`INSERT INTO seats (id, status, booked_by) VALUES (?, 'AVAILABLE', NULL)`, [i]);
     }
     
-    // Randomly book a realistic pattern of seats for the demo
+    // Randomly book seats for a realistic presentation demo
     const bookedSeats = [3, 4, 12, 15, 25, 26, 27, 45, 46, 68, 79];
     await pool.query(`UPDATE seats SET status = 'BOOKED', booked_by = 'Admin' WHERE id IN (?)`, [bookedSeats]);
     
     res.send('Database Reset! 80 seats created. Go to the main page.');
 });
 
-// Admin Route: To view your raw MySQL Database in the browser
+// Admin Route: To view raw MySQL Database in the browser
 app.get('/admin', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM seats');
@@ -56,6 +55,7 @@ app.get('/api/seats', async (req, res) => {
     }
 });
 
+// 1. Hold seat (Pessimistic Lock)
 app.post('/hold-seat', async (req, res) => {
     const { seatId } = req.body;
     try {
@@ -70,6 +70,7 @@ app.post('/hold-seat', async (req, res) => {
     }
 });
 
+// 2. Finalize booking
 app.post('/book-seat', async (req, res) => {
     const { seatId, name } = req.body;
     try {
@@ -82,6 +83,13 @@ app.post('/book-seat', async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false });
     }
+});
+
+// 3. Release seat (If timer expires)
+app.post('/release-seat', async (req, res) => {
+    const { seatId } = req.body;
+    await pool.query(`UPDATE seats SET status = 'AVAILABLE' WHERE id = ? AND status = 'PENDING'`, [seatId]);
+    res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 3000;
